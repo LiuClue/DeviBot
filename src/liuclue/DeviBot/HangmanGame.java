@@ -25,12 +25,6 @@ public class HangmanGame {
 	}};
 	List<String> valuesList = new ArrayList<String>(listOfWords.keySet());
 	
-	
-	
-	public HangmanGame() {
-		// TODO Auto-generated constructor stub
-	}
-	
 	public void newGame(MessageChannel channel) {
 		if (!gameActive) {
 			gameActive = true;

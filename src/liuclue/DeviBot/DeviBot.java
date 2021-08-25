@@ -1,6 +1,12 @@
 package liuclue.DeviBot;
 
-import java.util.*;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Scanner;
 
 import javax.security.auth.login.LoginException;
 
@@ -13,7 +19,6 @@ import net.dv8tion.jda.api.sharding.ShardManager;
 
 
 public class DeviBot {
-	private static String token = "ODc3MTM3OTY4NjI2ODI3MzI0.YRuQZA.zJIBV1gSkgF6PpgYnbHQuAMh_y4";	
 	private static String prefix = "+";
 	
 	public static boolean debug = false;
@@ -21,6 +26,32 @@ public class DeviBot {
 	private static ShardManager shardManager;
 	
 	public static void main(String[] args) throws LoginException {
+		String token = null;
+        try {
+            File tokenFile = Paths.get("token.txt").toFile();
+            if (!tokenFile.exists()) {
+                System.out.println("[ERROR] Could not find token.txt file");
+                System.out.print("Please paste in your bot token: ");
+                Scanner s = new Scanner(System.in);
+                token = s.nextLine();
+                System.out.println();
+                System.out.println("[INFO] Creating token.txt - please wait");
+                if (!tokenFile.createNewFile()) {
+                    System.out.println(
+                            "[ERROR] Could not create token.txt - please create this file and paste in your token"
+                                    + ".");
+                    s.close();
+                    return;
+                }
+                Files.write(tokenFile.toPath(), token.getBytes());
+                s.close();
+            }
+            token = new String(Files.readAllBytes(tokenFile.toPath()));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+		
+		
 		List<GatewayIntent> intents = new ArrayList<>(
 				Arrays.asList(GatewayIntent.GUILD_MESSAGES, GatewayIntent.GUILD_EMOJIS,
 						GatewayIntent.GUILD_MESSAGE_REACTIONS));
