@@ -3,9 +3,12 @@ package liuclue.DeviBot.listener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
 
 import liuclue.DeviBot.DeviBot;
-import liuclue.DeviBot.HangmanGame;
+import liuclue.DeviBot.commands.GameCommand;
+import liuclue.DeviBot.event.CommandEvent;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
@@ -17,17 +20,24 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class CommandListener extends ListenerAdapter{
 	
-    private static final ArrayList<String> commandsNoPrefix = new ArrayList<>(
-            Arrays.asList("info", "guess", "stop", "play"));
-	
-	HangmanGame game = new HangmanGame();
+    private static final HashMap<String, GameCommand> commands = new HashMap<>();
 	
 	public CommandListener() {
+        List<GameCommand> botCommands = new ArrayList<>();//Arrays.asList(new InfoCommand(), new PrefixCommand()));
+        botCommands.addAll(Arrays.asList(new GameCommand("play"), new GameCommand("guess"),
+                new GameCommand("stop")));
+
+        for (GameCommand command : botCommands) commands.put(command.getName().toLowerCase(), command);
+        System.out.println("[INFO] Loaded " + commands.size() + " commands");
 	}
 	
 	@Override
 	public void onGuildMessageReceived(GuildMessageReceivedEvent event) {
 		User user = event.getAuthor();
+		if(user.isBot()) {
+			return;
+		}
+	
 		Message message = event.getMessage();
 		TextChannel channel = event.getChannel();
 		Guild guild = event.getGuild();
@@ -37,27 +47,29 @@ public class CommandListener extends ListenerAdapter{
 		if(args.length > 0) {
 			String prefix = DeviBot.getPrefix();
 			String arg = args[0].toLowerCase();
+			boolean isCommand;
 			if (arg.startsWith(prefix)) {
-				String currCom = arg.substring(1);
+				String currCom = arg.substring(prefix.length()).toLowerCase();
                 if (!hasPermissions(guild, channel)) {
                     DeviBot.debug("Not enough permissions to run command: " + arg);
                     sendInvalidPermissionsMessage(user, channel);
                     return;
                 }
-                
-                if(commandsNoPrefix.contains(currCom)) {
-                	if(currCom.equals("guess")) {
-                		String guess = "";
-                		for (int x = 1; x < args.length; x++) {
-                			guess += args[x];
-                		}
-                			
-                		game.run(guild, channel, guess);
-                	} else {
-                		game.run(guild, channel, currCom);
-                	}
-                } else {
-                	System.out.println("not command " + currCom);
+                isCommand = commands.containsKey(currCom);
+                if(isCommand) {
+                    DeviBot.debug("Command received: " + currCom);
+                    if (!hasPermissions(guild, channel)) {
+                        DeviBot.debug("Not enough permissions to run command: " + currCom);
+                        sendInvalidPermissionsMessage(user, channel);
+                        return;
+                    }
+                    GameCommand command = commands.get(currCom);
+                    if (command == null) {
+                        DeviBot.debug("Received command does not exist: " + currCom);
+                        return;
+                    }
+                    DeviBot.debug("Executing command: " + currCom);
+                    command.execute(new CommandEvent(event, Arrays.copyOfRange(msgRaw.split("\\s+"), 1, args.length)));
                 }
 			}
 		}

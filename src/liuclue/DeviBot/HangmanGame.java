@@ -25,6 +25,10 @@ public class HangmanGame {
 	}};
 	List<String> valuesList = new ArrayList<String>(listOfWords.keySet());
 	
+	public HangmanGame(User user) {
+		this.user = user;
+	}
+	
 	public void newGame(MessageChannel channel) {
 		if (!gameActive) {
 			gameActive = true;
@@ -63,20 +67,36 @@ public class HangmanGame {
 		if (userInput.equals("play") && !gameActive) {
 			newGame(channel);
 		} else if (gameActive) {
-			if(userInput.equals(answer.replaceAll("\\s+", ""))) {
+			if (lives <= 0) {
+				System.out.println("Failed");
+				stop();
+			}else if(curr.equals(answer)) {
+				GameUtil.sendGameEmbed(channel, user, listOfWords.get(answer), curr);
 				System.out.println("Guessed Right");
 				stop();
-			} else if(userInput.length() == 1) {
-				checkChar(userInput.charAt(0));
+			} else {
 				GameUtil.sendGameEmbed(channel, user, listOfWords.get(answer), curr);
 				System.out.println("Guessed Letter");
 			}
 			
-			if (lives <= 0) {
-				System.out.println("Failed");
-				stop();
+		}
+	}
+	
+	public void guess(String[] input) {
+		if(input.length == 1) {
+			if(input[0].length() == 1) {
+				checkChar(input[0].charAt(0));
+				return;
 			}
 		}
+		int counter = 0;
+		String[] ansArray = answer.split("\\s+");
+		if(ansArray.length > input.length) return;
+		for(String word: ansArray) {
+			if(!word.equals(input[counter])) return;
+			counter ++;
+		}
+		curr = answer;
 	}
 	
 	public void stop() {
