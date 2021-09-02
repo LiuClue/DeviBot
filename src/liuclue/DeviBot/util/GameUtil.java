@@ -11,14 +11,14 @@ public class GameUtil {
 
     private static final HashMap<Long, HangmanGame> games = new HashMap<>();
 
-	public static void sendGameEmbed(MessageChannel channel, User user, String clue, String progress) {
+	public static void sendGameEmbed(MessageChannel channel, User user, String clue, String progress, int lives) {
 		EmbedBuilder embed = new EmbedBuilder();
 		embed.setTitle("DeviBot Word Guesser ");
 		embed.setDescription(progress);
         embed.addField("Player:", user.getAsMention(), true);
         embed.addField("Clue:", clue, true);
+        embed.addField("Lives:", Integer.toString(lives), true);
 		
-		System.out.println(progress);
 		channel.sendTyping().queue();
 		channel.sendMessageEmbeds(embed.build()).queue();
 	}
@@ -28,7 +28,6 @@ public class GameUtil {
 		embed.setTitle("DeviBot Word Guesser | Clue: " + clue);
 		embed.setDescription(progress);
 		
-		System.out.println(progress);
 		channel.sendTyping().queue();
 		channel.sendMessageEmbeds(embed.build()).queue();
 	}

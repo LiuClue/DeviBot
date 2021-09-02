@@ -1,6 +1,14 @@
 package liuclue.DeviBot;
 
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import liuclue.DeviBot.util.GameUtil;
@@ -17,15 +25,18 @@ public class HangmanGame {
 	public boolean gameActive = false;
 	int lives;
 	String answer = "";
+	String clue = "";
 	String curr = "";
 	
-	Map<String, String> listOfWords = new HashMap<String, String>() {{
-		put("happy go lucky", "cheerful");
-		put("second wind", "another burst");
-	}};
-	List<String> valuesList = new ArrayList<String>(listOfWords.keySet());
+	File puzzleFile;
 	
 	public HangmanGame(User user) {
+        try {
+            puzzleFile = Paths.get("puzzle.txt").toFile();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        
 		this.user = user;
 	}
 	
@@ -33,7 +44,16 @@ public class HangmanGame {
 		if (!gameActive) {
 			gameActive = true;
 			Random rand = new Random();
-			answer = valuesList.get(rand.nextInt(valuesList.size()));
+			try {
+				String puzzle = choose(puzzleFile);
+				String[] puzzleArray = puzzle.split(",");
+		        DeviBot.debug("Generating puzzle: " + puzzleArray[1]);
+		        
+				answer = puzzleArray[0];
+				clue = puzzleArray[1];
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
 			StringBuilder sb = new StringBuilder();
 			lives = 5;
 			for (char c : answer.toCharArray()) {
@@ -44,9 +64,26 @@ public class HangmanGame {
 				}
 			}
 			curr = sb.toString();
-			GameUtil.sendGameEmbed(channel, user, listOfWords.get(answer), curr);
+			GameUtil.sendGameEmbed(channel, user, clue, curr, lives);
 		}
 	}
+	
+
+	  public static String choose(File f) throws FileNotFoundException
+	  {
+	     String result = null;
+	     Random rand = new Random();
+	     int n = 0;
+	     for(Scanner sc = new Scanner(f); sc.hasNext(); )
+	     {
+	        ++n;
+	        String line = sc.nextLine();
+	        if(rand.nextInt(n) == 0)
+	           result = line;         
+	     }
+
+	     return result;      
+	  }
 	
 	public void checkChar(char guess) {
 		StringBuilder sb = new StringBuilder(curr);
@@ -67,20 +104,20 @@ public class HangmanGame {
 		if (userInput.equals("play") && !gameActive) {
 			newGame(channel);
 		} else if (gameActive) {
-			if (lives <= 0) {
-				System.out.println("Failed");
+			if(curr.equals(answer)) {
+				GameUtil.sendGameEmbed(channel, user, clue, curr, lives);
 				stop();
-			}else if(curr.equals(answer)) {
-				GameUtil.sendGameEmbed(channel, user, listOfWords.get(answer), curr);
-				System.out.println("Guessed Right");
-				stop();
-			} else {
-				GameUtil.sendGameEmbed(channel, user, listOfWords.get(answer), curr);
-				System.out.println("Guessed Letter");
+			}else if (lives <= 0) {
+				GameUtil.sendGameEmbed(channel, user, clue, answer, lives);
+				stop(); 
+			}else {
+				lives --;
+				GameUtil.sendGameEmbed(channel, user, clue, curr, lives);
 			}
 			
 		}
 	}
+
 	
 	public void guess(String[] input) {
 		if(input.length == 1) {
